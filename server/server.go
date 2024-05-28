@@ -5,6 +5,7 @@ import (
 	"klocalcp/common/ip"
 	"log"
 	"net/http"
+	"sync"
 )
 
 func Start() (srv *http.Server) {
@@ -28,4 +29,13 @@ func startHttpServer() (srv *http.Server) {
 	go srv.ListenAndServe()
 	// returning reference so caller can call Shutdown()
 	return srv
+}
+
+type Server struct{
+	sync.Mutex
+	
+
+
+
+
 }
