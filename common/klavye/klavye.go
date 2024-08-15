@@ -6,8 +6,8 @@ import (
 	"golang.design/x/hotkey"
 )
 
-var CopyComb *hotkey.Hotkey = hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyC)
-var PasteComb *hotkey.Hotkey = hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyV)
+var copyComb *hotkey.Hotkey = hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyC)
+var pasteComb *hotkey.Hotkey = hotkey.New([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeyV)
 
 func CopyPasteDinle() (copy chan int, paste chan int) {
 	copy = make(chan int)
@@ -16,22 +16,26 @@ func CopyPasteDinle() (copy chan int, paste chan int) {
 	return
 }
 
+
+
+
 func copyPasteDinle(copy chan int, paste chan int) {
-	err := CopyComb.Register()
-	err2 := PasteComb.Register()
+	err := copyComb.Register()
+	err2 := pasteComb.Register()
 	if err != nil || err2 != nil {
 		log.Fatal("HATA klavye dinlenemiyor. ")
 	}
 	for {
 		select {
-		case <-CopyComb.Keydown():
+		case <-copyComb.Keydown():
 			copy <- 1
-		case <-CopyComb.Keyup():
+		case <-copyComb.Keyup():
 			copy <- 0
-		case <-PasteComb.Keydown():
+		case <-pasteComb.Keydown():
 			paste <- 1
-		case <-PasteComb.Keyup():
+		case <-pasteComb.Keyup():
 			paste <- 0
 		}
 	}
 }
+
