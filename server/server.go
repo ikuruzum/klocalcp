@@ -2,40 +2,96 @@ package server
 
 import (
 	"fmt"
-	"klocalcp/common/ip"
-	"log"
-	"net/http"
+	"net"
+	"strings"
 	"sync"
+	"time"
 )
 
-func Start() (srv *http.Server) {
-	return startHttpServer()
-}
-
-func startHttpServer() (srv *http.Server) {
-	myip, ok := ip.MyLocalIP()
-	if !ok {
-		log.Fatal("local ip could not be found")
+func Start() {
+	listen, err := net.Listen("tcp", ":5001")
+	lookForIps(false)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("HAHAHAHEHEIGŞLQEWŞF"))
-	})
-	srv = &http.Server{Addr: myip + ":" + fmt.Sprint(ip.PORT)}
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-	})
-	
-	go srv.ListenAndServe()
-	// returning reference so caller can call Shutdown()
-	return srv
+	for {
+		conn, err := listen.Accept()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		go handleConnection(conn)
+	}
 }
 
-type Server struct{
-	sync.Mutex
-	
+func handleConnection(conn net.Conn) {
+	for {
+		var endpoint, err = getEndpoint(conn)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
+		var header = ""
+		var body = ""
 
+		switch endpoint {
+		case "/":
+			fmt.Print(endpoint, " HTTP/1.1 200 OK\r\n\r\n")
+			body = "200 OK"
+			header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(body)) + "\r\n\r\n"
+		default:
+			fmt.Print(endpoint, " HTTP/1.1 404 Not Found\r\n\r\n")
+			body = "404 Not Found"
+			header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(body)) + "\r\n\r\n"
+		}
 
+		_, err = conn.Write([]byte(header + body))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+}
 
+func getEndpoint(conn net.Conn) (string, error) {
+
+	buf := make([]byte, 1024)
+	_, err := conn.Read(buf)
+
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Split(string(buf), " ")[1], nil
+}
+
+var wg sync.WaitGroup
+
+func lookForIps(widesearch bool) /*([]net.IP, error)*/ {
+	var maxroute = 1
+	if widesearch {
+		maxroute = 255
+	}
+	for j := 1; j <= maxroute; j++ {
+		for i := 1; i < 256; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				lookForIp(fmt.Sprintf("192.168.%d.%d:5001", j, i))
+			}()
+		}
+		wg.Wait()
+	}
+}
+
+func lookForIp(ip string) {
+	d := net.Dialer{Timeout: 5 * time.Second}
+	dial, err := d.Dial("tcp", ip)
+	if err == nil {
+		fmt.Println("found ip", ip)
+		dial.Close()
+		return
+	}
 }

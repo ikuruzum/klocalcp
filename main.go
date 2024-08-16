@@ -1,13 +1,9 @@
 package main
 
-import(
-	
+import (
+	"klocalcp/server"
 )
 
 func main() {
-
-		
-
-
-
+	server.Start()
 }
