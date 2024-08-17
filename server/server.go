@@ -41,6 +41,11 @@ func handleConnection(conn net.Conn) {
 			fmt.Print(endpoint, " HTTP/1.1 200 OK\r\n\r\n")
 			body = "200 OK"
 			header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(body)) + "\r\n\r\n"
+
+		case "/areyoualive":
+			fmt.Print(endpoint, " HTTP/1.1 200 OK\r\n\r\n")
+			body = "1"
+			header = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + fmt.Sprint(len(body)) + "\r\n\r\n"
 		default:
 			fmt.Print(endpoint, " HTTP/1.1 404 Not Found\r\n\r\n")
 			body = "404 Not Found"
@@ -68,6 +73,7 @@ func getEndpoint(conn net.Conn) (string, error) {
 }
 
 var wg sync.WaitGroup
+var ips []string
 
 func lookForIps(widesearch bool) /*([]net.IP, error)*/ {
 	var maxroute = 1
@@ -84,13 +90,20 @@ func lookForIps(widesearch bool) /*([]net.IP, error)*/ {
 		}
 		wg.Wait()
 	}
+	fmt.Println(ips)
 }
 
 func lookForIp(ip string) {
 	d := net.Dialer{Timeout: 5 * time.Second}
 	dial, err := d.Dial("tcp", ip)
 	if err == nil {
-		fmt.Println("found ip", ip)
+		ips = append(ips, ip)
+
+		dial.Write([]byte("GET / HTTP/1.1\r\n\r\n"))
+		var x []byte = make([]byte, 1024)
+		dial.Read(x)
+		fmt.Println(string(x))
+
 		dial.Close()
 		return
 	}
