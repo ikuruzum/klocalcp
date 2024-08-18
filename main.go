@@ -1,9 +1,11 @@
 package main
 
 import (
+	"klocalcp/common/klavye"
 	"klocalcp/server"
 )
 
 func main() {
-	server.Start()
+	go server.Start()
+	go klavye.CopyPasteDinle()
 }
